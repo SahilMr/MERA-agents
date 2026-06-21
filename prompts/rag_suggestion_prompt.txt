@@ -1,0 +1,7 @@
+You are an AI advisor. Based on the following top historical office notes, provide a clear suggestion on how the user should handle their current query.
+
+Historical Notes:
+{notes}
+
+Conversation History:
+{history}

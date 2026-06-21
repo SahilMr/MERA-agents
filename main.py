@@ -27,23 +27,23 @@ def process_message(msg_value: str):
         validated_msg = RTIKafkaMessage(**data)
         logger.info(f"Successfully validated message for RTI ID: {validated_msg.rti_id}")
         
-        # Call fetch_rti_query API
-        params = {"rti_query_id": validated_msg.rti_id}
-        logger.info(f"Calling API: {MeeraEndpoints.FETCH_RTI_REQUEST_URL} with params: {params}")
+        # Call create_rti_query API
+        payload = {
+            "rti_query_id": validated_msg.rti_id,
+            "rti_query": validated_msg.query,
+            "applicant_name": validated_msg.applicant_name,
+            "applicant_email": validated_msg.applicant_mail,
+            "applicant_phone_number": str(validated_msg.applicant_phone_number),
+            "status_id": 1
+        }
+        logger.info(f"Calling API: {MeeraEndpoints.CREATE_RTI_QUERY_API_URL} to create RTI request.")
         
-        response = requests.get(MeeraEndpoints.FETCH_RTI_REQUEST_URL, params=params)
+        response = requests.post(MeeraEndpoints.CREATE_RTI_QUERY_API_URL, json=payload)
         response.raise_for_status() # Raise HTTP errors if any
         
         # Process API response
         api_data = response.json()
-        logger.info(f"Successfully fetched RTI query details: {api_data}")
-        
-        query_text = api_data.get("query_text", "")
-        applicant_email = api_data.get("applicant_email")
-        
-        if not query_text:
-            logger.error("No query_text found in the API response.")
-            return
+        logger.info(f"Successfully created RTI query: {api_data}")
 
         # Initialize and run the LangGraph Workflow
         logger.info("Initializing RTI Agent Workflow...")
@@ -52,8 +52,8 @@ def process_message(msg_value: str):
         
         initial_state = {
             "rti_id": validated_msg.rti_id,
-            "query": query_text,
-            "applicant_email": applicant_email
+            "query": validated_msg.query,
+            "applicant_email": validated_msg.applicant_mail
         }
         
         logger.info("Invoking LangGraph workflow...")
@@ -89,6 +89,7 @@ def consume_messages():
             msg = consumer.poll(timeout=1.0)
             
             if msg is None:
+                print("NO MESSAGE")
                 continue
                 
             if msg.error():
@@ -100,6 +101,7 @@ def consume_messages():
             else:
                 msg_value = msg.value().decode('utf-8')
                 logger.info(f"Received message: {msg_value}")
+                print("MESSAGE_VALUE : ",msg_value)
                 process_message(msg_value)
                 
     except KeyboardInterrupt:

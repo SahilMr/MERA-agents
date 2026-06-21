@@ -119,20 +119,61 @@ class RTIAgentWorkflow:
 
     def store_assignments_node(self, state: GraphState) -> dict:
         rti_id = state["rti_id"]
+        original_query = state["query"]
         assignments = state["assignments"]
-        logger.info(f"Storing assignments for RTI {rti_id} in DB.")
+        logger.info(f"Processing inward creation for RTI {rti_id}...")
         
-        payload = {
-            "rti_query_id": rti_id,
-            "assignments": assignments
-        }
-        try:
-            response = requests.post(MeeraEndpoints.STORE_ATOMIC_DEPARTMENT_API_URL, json=payload)
-            response.raise_for_status()
-        except Exception as e:
-            logger.error(f"Failed to store assignments in DB: {e}")
+        for item in assignments:
+            atomic = item["atomic_query"]
+            dept = item["department"]
             
-        return {"final_status": "assignments_stored"}
+            try:
+                # 1. Fetch Mapping
+                mapping_res = requests.get(
+                    MeeraEndpoints.FETCH_MAPPING_API_URL, 
+                    params={"department": dept}
+                )
+                mapping_res.raise_for_status()
+                mapping_data = mapping_res.json()
+                user_id = mapping_data.get("data").get("records")[0].get("id")
+                print("*********** USER_ID *********** : ", user_id)
+                
+                if not user_id:
+                    logger.error(f"No user_id found in mapping for department {dept}")
+                    continue
+
+
+                # # 3. Create Inward
+                # inward_payload = {
+                #     "rti_query": original_query,
+                #     "rti_query_id": rti_id,
+                #     "atomic_query_id": atomic_query_id,
+                #     "user_id": user_id
+                # }
+                # inward_res = requests.post(MeeraEndpoints.CREATE_INWARD_API_URL, json=inward_payload)
+                # inward_res.raise_for_status()
+                # logger.info(f"Successfully created inward for atomic query {atomic_query_id}")
+
+
+                # 2. Insert Atomic Query
+                atomic_payload = {
+                    "rti_query_id": rti_id,
+                    "atomic_query": atomic,
+                    "department_id": str(user_id) 
+                }
+                atomic_res = requests.post(MeeraEndpoints.INSERT_ATOMIC_QUERY_API_URL, json=atomic_payload)
+                atomic_res.raise_for_status()
+                atomic_query_id = atomic_res.json().get("data").get("atomic_query_id")
+
+                if not atomic_query_id:
+                    logger.error("Failed to retrieve atomic_query_id from insert response.")
+                    continue
+
+                
+            except Exception as e:
+                logger.error(f"Failed inward creation pipeline for department {dept}: {e}", exc_info=True)
+                
+        return {"final_status": "inwards_created"}
 
     def _update_rti_status(self, rti_id: str, status: str, remark: str):
         payload = {
