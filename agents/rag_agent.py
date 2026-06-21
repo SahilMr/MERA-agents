@@ -7,7 +7,8 @@ from datetime import datetime
 import numpy as np
 
 from langchain_openai import ChatOpenAI
-from langchain_core.prompts import ChatPromptTemplate
+from langchain_core.prompts import ChatPromptTemplate, PromptTemplate
+from langchain_core.output_parsers import StrOutputParser
 from sentence_transformers import SentenceTransformer
 
 from constants.app_constants import LLMConfig, FilePath
@@ -235,3 +236,11 @@ class RagAgent:
             "suggestion": suggestion,
             "reference_ids": top_ids
         }
+
+    def draft_office_note(self, query: str, precedents: str) -> str:
+        try:
+            chain = self.draft_note_prompt | self.llm | StrOutputParser()
+            return chain.invoke({"query": query, "precedents": precedents})
+        except Exception as e:
+            logger.error(f"Error drafting office note: {e}")
+            return "Failed to draft office note."

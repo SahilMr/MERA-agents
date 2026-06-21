@@ -67,10 +67,12 @@ class RTIAgentWorkflow:
 
     def route_triage(self, state: GraphState) -> str:
         triage = state["triage_result"]
-        if not triage.is_filed_properly:
-            return "request_missing_info"
-        if not triage.under_rti_purview:
+        print("*********** TRIAGE : **************",triage)
+        if triage.out_of_scope:
             return "mark_out_of_scope"
+        if triage.request_more_info and not triage.out_of_scope:
+            return "request_missing_info"
+        
         return "decompose"
 
     def triage_node(self, state: GraphState) -> dict:
@@ -81,7 +83,7 @@ class RTIAgentWorkflow:
     def request_missing_info_node(self, state: GraphState) -> dict:
         rti_id = state["rti_id"]
         applicant_email = state.get("applicant_email")
-        reasoning = state["triage_result"].reasoning
+        reasoning = state["triage_result"].thought_process
         
         if applicant_email:
             logger.info(f"Sending missing info email to {applicant_email}")
@@ -98,7 +100,7 @@ class RTIAgentWorkflow:
 
     def mark_out_of_scope_node(self, state: GraphState) -> dict:
         rti_id = state["rti_id"]
-        reasoning = state["triage_result"].reasoning
+        reasoning = state["triage_result"].thought_process
         logger.info(f"Marking RTI {rti_id} as out of scope.")
         self._update_rti_status(rti_id, "OUT_OF_SCOPE", reasoning)
         return {"final_status": "marked_out_of_scope"}
@@ -198,12 +200,13 @@ class RTIAgentWorkflow:
 
     def _update_rti_status(self, rti_id: str, status: str, remark: str):
         payload = {
-            "rti_query_id": rti_id,
-            "status": status,
-            "remark": remark
+        "status_id": 4,
+        "remark": remark,
+        "updated_by": "System",
+        "rti_query_id": rti_id
         }
         try:
-            response = requests.post(MeeraEndpoints.UPDATE_RTI_STATUS_API_URL, json=payload)
+            response = requests.put(MeeraEndpoints.UPDATE_RTI_STATUS_API_URL, json=payload)
             response.raise_for_status()
         except Exception as e:
             logger.error(f"Failed to update RTI status in DB: {e}")

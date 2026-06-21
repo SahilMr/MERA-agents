@@ -56,8 +56,9 @@ class TriageAgent:
         logger.info("TriageAgent evaluating query...")
         try:
             result = self.chain.invoke({"query": query})
-            logger.info(f"Triage Result: should_route={result.should_route}, reasoning={result.reasoning}")
             print("********** TAG : *************",result)
+            logger.info(f"Triage Result: complies_guidelines={result.complies_guidelines}, thought_process={result.thought_process}")
+            
             return result
         except Exception as e:
             logger.error(f"Error during triage evaluation: {e}", exc_info=True)

@@ -19,17 +19,21 @@ class FilePath:
 class KafkaConfig:
     BOOTSTRAP_SERVERS = os.getenv("KAFKA_BOOTSTRAP_SERVERS", "localhost:9092")
     TOPIC = os.getenv("KAFKA_TOPIC", "rti_topic")
+    CLOSURE_TOPIC = os.getenv("KAFKA_CLOSURE_TOPIC", "rti_closure_topic")
     GROUP_ID = os.getenv("KAFKA_GROUP_ID", "rti_group")
 
 class MeeraEndpoints:
     FETCH_RTI_REQUEST_URL = os.getenv("FETCH_RTI_QUERY_API_URL", "http://localhost:8000/api/fetch_rti_query")
     INSERT_MAIL_RECORD_API_URL = os.getenv("INSERT_MAIL_RECORD_API_URL", "http://localhost:8000/api/insert_mail_record")
     UPDATE_RTI_STATUS_API_URL = os.getenv("UPDATE_RTI_STATUS_API_URL", "http://localhost:8000/api/update_rti_status")
-    UPDATE_RTI_STATUS_API_URL = os.getenv("UPDATE_RTI_STATUS_API_URL", "http://localhost:8000/api/update_rti_status")
     FETCH_MAPPING_API_URL = os.getenv("FETCH_MAPPING_API_URL", "http://localhost:8000/api/fetch_mapping")
     INSERT_ATOMIC_QUERY_API_URL = os.getenv("INSERT_ATOMIC_QUERY_API_URL", "http://localhost:8000/api/insert_atomic_query")
     CREATE_INWARD_API_URL = os.getenv("CREATE_INWARD_API_URL", "http://localhost:8000/api/create_inward")
     CREATE_RTI_QUERY_API_URL = os.getenv("CREATE_RTI_QUERY_API_URL", "http://127.0.0.1:8000/api/v1/rti-queries")
+    UPDATE_RTI_QUERY_API_URL = os.getenv("UPDATE_RTI_QUERY_API_URL", "http://127.0.0.1:8000/api/v1/rti-queries/")
+    UPDATE_ATOMIC_QUERY_API_URL = os.getenv("UPDATE_ATOMIC_QUERY_API_URL", "http://127.0.0.1:8000/api/v1/rti-queries/atomic")
+    RETRIEVE_HISTORICAL_PRECEDENTS_API_URL = os.getenv("RETRIEVE_HISTORICAL_PRECEDENTS_API_URL", "http://localhost:8000/api/retrieve_historical_precedents")
+    RETRIEVE_CHAT_CONTEXT_API_URL = os.getenv("RETRIEVE_CHAT_CONTEXT_API_URL", "http://localhost:8000/api/retrieve_chat_context")
 
 class MailConfig:
     SMTP_HOST = os.getenv("SMTP_HOST", "smtp.gmail.com")

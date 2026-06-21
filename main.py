@@ -47,8 +47,8 @@ def process_message(msg_value: str):
 
         # Initialize and run the LangGraph Workflow
         logger.info("Initializing RTI Agent Workflow...")
-        from workflow.rti_agent import RTIAgentWorkflow
-        workflow_app = RTIAgentWorkflow().graph
+        from workflow.flow_2 import Flow2Workflow
+        workflow_app = Flow2Workflow().graph
         
         initial_state = {
             "rti_id": validated_msg.rti_id,
@@ -71,6 +71,25 @@ def process_message(msg_value: str):
         logger.error(f"An unexpected error occurred: {e}", exc_info=True)
 
 
+def process_closure_message(msg_value: str):
+    try:
+        data = json.loads(msg_value)
+        rti_id = data.get("rti_id")
+        if not rti_id:
+            logger.error("Closure message missing rti_id")
+            return
+            
+        logger.info(f"Processing closure message for RTI ID: {rti_id}")
+        from workflow.closure_flow import ClosureFlow
+        closure_flow = ClosureFlow()
+        closure_flow.run(rti_id)
+        
+    except json.JSONDecodeError as e:
+        logger.error(f"Failed to decode JSON closure message: {msg_value}. Error: {e}")
+    except Exception as e:
+        logger.error(f"An unexpected error occurred during closure processing: {e}", exc_info=True)
+
+
 def consume_messages():
     """Consume messages from Kafka topic."""
     conf = {
@@ -82,14 +101,13 @@ def consume_messages():
     consumer = Consumer(conf)
     
     try:
-        consumer.subscribe([KafkaConfig.TOPIC])
-        logger.info(f"Subscribed to topic: {KafkaConfig.TOPIC}")
+        consumer.subscribe([KafkaConfig.TOPIC, KafkaConfig.CLOSURE_TOPIC])
+        logger.info(f"Subscribed to topics: {KafkaConfig.TOPIC}, {KafkaConfig.CLOSURE_TOPIC}")
         
         while True:
             msg = consumer.poll(timeout=1.0)
             
             if msg is None:
-                print("NO MESSAGE")
                 continue
                 
             if msg.error():
@@ -100,9 +118,13 @@ def consume_messages():
                     raise KafkaException(msg.error())
             else:
                 msg_value = msg.value().decode('utf-8')
-                logger.info(f"Received message: {msg_value}")
+                logger.info(f"Received message on topic {msg.topic()}: {msg_value}")
                 print("MESSAGE_VALUE : ",msg_value)
-                process_message(msg_value)
+                
+                if msg.topic() == KafkaConfig.TOPIC:
+                    process_message(msg_value)
+                elif msg.topic() == KafkaConfig.CLOSURE_TOPIC:
+                    process_closure_message(msg_value)
                 
     except KeyboardInterrupt:
         logger.info("Consumer stopped by user.")
