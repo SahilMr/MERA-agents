@@ -1,3 +1,4 @@
+from datetime import timedelta
 import logging
 import requests
 from typing import TypedDict, List, Optional, Dict
@@ -12,6 +13,7 @@ from schema.triage_schema import TriageResult
 from schema.decomposer_schema import DecomposedResult
 from schema.department_schema import DepartmentAssignmentResult
 from constants.app_constants import MeeraEndpoints
+import datetime
 
 logger = logging.getLogger(__name__)
 
@@ -135,8 +137,9 @@ class RTIAgentWorkflow:
                 )
                 mapping_res.raise_for_status()
                 mapping_data = mapping_res.json()
+             
                 user_id = mapping_data.get("data").get("records")[0].get("id")
-                print("*********** USER_ID *********** : ", user_id)
+        
                 
                 if not user_id:
                     logger.error(f"No user_id found in mapping for department {dept}")
@@ -144,22 +147,40 @@ class RTIAgentWorkflow:
 
 
                 # # 3. Create Inward
-                # inward_payload = {
-                #     "rti_query": original_query,
-                #     "rti_query_id": rti_id,
-                #     "atomic_query_id": atomic_query_id,
-                #     "user_id": user_id
-                # }
-                # inward_res = requests.post(MeeraEndpoints.CREATE_INWARD_API_URL, json=inward_payload)
-                # inward_res.raise_for_status()
-                # logger.info(f"Successfully created inward for atomic query {atomic_query_id}")
+                inward_payload = {
+                    "department":mapping_data.get("data").get("records")[0].get("department"),
+                    "inward_file": atomic,
+                    "user_name": mapping_data.get("data").get("records")[0].get("user"),
+                    "division": mapping_data.get("data").get("records")[0].get("division_section"),
+                    "sub_section": mapping_data.get("data").get("records")[0].get("sub_section"),
+                    "case_access_level": "Wider Case Access",
+                    "privacy_level": "public",
+                    "inward_priority_level" : "high",
+                    "year": str(datetime.date.today().year),
+                    "inward_subject":"TBD",
+                    "inward_type":"TBD",
+                    "from_which_office":"Central Office",
+                    "from_which_department":mapping_data.get("data").get("records")[0].get("department"),
+                    "inward_date":str(datetime.date.today()),
+                    "letter_type":"Central Office(Others)",
+                    "estimated_date_of_closure":str(datetime.date.today() + timedelta(days=30)),
+                    "date_of_receipt":str(datetime.date.today()),
+                    "process_type":"RTI",
+                    "letter_language":"English",
+                    "assigned_to":"self"
+                }
+
+                inward_res = requests.post(MeeraEndpoints.CREATE_INWARD_API_URL, json=inward_payload)
+                inward_res.raise_for_status()
+                logger.info(f"Successfully created inward  {inward_res.json().get("data").get("inward_id")}")
 
 
                 # 2. Insert Atomic Query
                 atomic_payload = {
                     "rti_query_id": rti_id,
                     "atomic_query": atomic,
-                    "department_id": str(user_id) 
+                    "department_id": str(user_id),
+                    "inward_id": inward_res.json().get("data").get("inward_id")
                 }
                 atomic_res = requests.post(MeeraEndpoints.INSERT_ATOMIC_QUERY_API_URL, json=atomic_payload)
                 atomic_res.raise_for_status()

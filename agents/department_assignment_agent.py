@@ -47,7 +47,7 @@ class DepartmentAssignmentAgent:
             # score = prediction.get("score", 0.0)
 
             # prediction = self.classifier(atomic_query)[0]
-            label = "department_of_supervision"
+            label = "Department Of Supervision"
             score = "0.9"
             
             logger.info(f"Department Assignment Result: department={label}, confidence={score}")
