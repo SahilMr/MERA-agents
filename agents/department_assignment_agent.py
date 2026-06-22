@@ -1,5 +1,4 @@
 import logging
-from transformers import pipeline
 from schema.department_schema import DepartmentAssignmentResult
 from constants.app_constants import LLMConfig
 
