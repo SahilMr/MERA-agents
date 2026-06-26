@@ -32,6 +32,7 @@ class MeeraEndpoints:
     CREATE_RTI_QUERY_API_URL = os.getenv("CREATE_RTI_QUERY_API_URL", "http://127.0.0.1:8000/api/v1/rti-queries")
     UPDATE_RTI_QUERY_API_URL = os.getenv("UPDATE_RTI_QUERY_API_URL", "http://127.0.0.1:8000/api/v1/rti-queries/")
     UPDATE_ATOMIC_QUERY_API_URL = os.getenv("UPDATE_ATOMIC_QUERY_API_URL", "http://127.0.0.1:8000/api/v1/rti-queries/atomic")
+    FETCH_ATOMIC_NOTES_API_URL = os.getenv("FETCH_ATOMIC_NOTES_API_URL", "http://localhost:8000/api/v1/rti-queries/atomic-notes")
     RETRIEVE_HISTORICAL_PRECEDENTS_API_URL = os.getenv("RETRIEVE_HISTORICAL_PRECEDENTS_API_URL", "http://localhost:8000/api/retrieve_historical_precedents")
     RETRIEVE_CHAT_CONTEXT_API_URL = os.getenv("RETRIEVE_CHAT_CONTEXT_API_URL", "http://localhost:8000/api/retrieve_chat_context")
 

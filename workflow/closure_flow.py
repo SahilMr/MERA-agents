@@ -1,34 +1,36 @@
 import logging
 import requests
+import base64
 from agents.drafting_agent import DraftingAgent
 from constants.app_constants import MeeraEndpoints
-import os
 
 logger = logging.getLogger(__name__)
 
 class ClosureFlow:
     def __init__(self):
         self.drafting_agent = DraftingAgent()
-        self.fetch_url = MeeraEndpoints.FETCH_RTI_REQUEST_URL.replace("fetch_rti_query", "") 
-        # Actually it's better to fetch by ID using the detail endpoint: /rti-queries/{rti_id}
-        # Assuming we have an endpoint for this. We will just hardcode the base url for now
-        api_base = os.getenv("CREATE_RTI_QUERY_API_URL", "http://127.0.0.1:8000/api/v1/rti-queries")
-        # remove any trailing slash
-        if api_base.endswith('/'):
-            api_base = api_base[:-1]
-        self.detail_url = api_base
+        self.fetch_url = MeeraEndpoints.FETCH_ATOMIC_NOTES_API_URL
 
     def run(self, rti_id: str):
         logger.info(f"Starting Closure Flow for RTI {rti_id}")
         try:
-            res = requests.get(f"{self.detail_url}/{rti_id}")
+            res = requests.get(self.fetch_url, params={"rti_query_id": rti_id})
             res.raise_for_status()
-            data = res.json().get("data", {})
+            data = res.json().get("data", [])
             
-            office_notes = data.get("office_notes", [])
+            print("********** DATA ****************** : ",data)
+            
             notes_text = []
-            for n in office_notes:
-                notes_text.append(n.get("office_note", ""))
+            for item in data:
+                note_base64 = item.get("office_note_base64")
+                if note_base64:
+                    try:
+                        decoded_bytes = base64.b64decode(note_base64)
+                        note_content = decoded_bytes.decode('utf-8', errors='ignore')
+                        if note_content:
+                            notes_text.append(note_content)
+                    except Exception as dec_err:
+                        logger.error(f"Error decoding base64 office note: {dec_err}")
                 
             if not notes_text:
                 logger.warning(f"No office notes found for RTI {rti_id}. Cannot collate.")
